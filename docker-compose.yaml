@@ -1,9 +1,10 @@
 x-airflow-common:
+  &airflow-common
   build: .
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
-    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@${POSTRES_CONTAAINER_NAME}/airflow
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@${POSTGRES_CONTAINER_NAME}/airflow
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
@@ -15,22 +16,20 @@ x-airflow-common:
     - ./plugins:/opt/airflow/plugins
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
-    &airflow-common-depends-on
-    postgres:
-      condition: service_healthy
+    - postgres
 
 services:
   postgres:
     image: postgres:13
-    container_name: {$POSTGRES_CONTAINER_NAME}
+    container_name: ${POSTGRES_CONTAINER_NAME}
     environment:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
       POSTGRES_DB: airflow
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
-  ports:
-    - '${POSTGRES_PORT}:5432'
+    ports:
+      - "${POSTGRES_PORT}:5432"
 
   airflow-webserver:
     <<: *airflow-common
@@ -39,7 +38,6 @@ services:
     ports:
       - "${AIRFLOW_WEBSERVER_PORT}:8080"
     depends_on:
-      <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
 
@@ -48,7 +46,6 @@ services:
     command: scheduler
     container_name: ${AIRLFOW_SCHEDULER_CONTAINER_NAME}
     depends_on:
-      <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
 
@@ -57,7 +54,6 @@ services:
     <<: *airflow-common
     container_name: ${AIRFLOW_INIT_CONTAINER_NAME}
     entrypoint: /bin/bash
-    # yamllint disable rule:line-length
     command:
       - -c
       - |
@@ -111,12 +107,12 @@ services:
       <<: *airflow-common-env
       _AIRFLOW_DB_MIGRATE: 'true'
       _AIRFLOW_WWW_USER_CREATE: 'true'
-      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
-      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+      _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_WWW_USER_USERNAME}
+      _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_WWW_USER_PASSWORD}
       _PIP_ADDITIONAL_REQUIREMENTS: ''
     user: "0:0"
     volumes:
-      - $.:/sources
+      - .:/sources
 
 volumes:
   postgres-db-volume:
