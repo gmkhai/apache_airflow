@@ -7,4 +7,4 @@ Airflow is orchecstration for Data pipline with complexity process. Airflow usin
 3. Enter your python virtual environment using command `.\venv\Scripts\activate` or `source venv/bin/activate`
 4. Run this command `pip install -r requirements.txt` in current position repositories for install all library python for running airflow
 5. Make new folder using command `mkdir -p ./dags ./logs ./plugins ./config` this folder `dags` for create job/dags, `logs` for log each dag process, `plugins` for each all plugins using in airflow, `configs` configuration for running airflow
-6.  
+6.  Type this command for create, and running container `docker-compose -f docker-compose.yaml --env-file .env up -d`
